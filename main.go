@@ -19,7 +19,7 @@ func main() {
 	http.HandleFunc("/", homeHandler)
 	http.HandleFunc("/authorize", authorizeHandler)
 	http.HandleFunc("/token", tokenHandler)
-	// http.HandleFunc("/userinfo", userInfoHandler)
+	http.HandleFunc("/userinfo", userInfoHandler)
 
 	// Start server
 	log.Println("Starting server on :8080")
@@ -127,4 +127,8 @@ func tokenHandler(w http.ResponseWriter, r *http.Request) {
 	default:
 		http.Error(w, "Unexpected response from token endpoint", http.StatusInternalServerError)
 	}
+}
+
+func userInfoHandler(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte(`{"Hello!":"World"}`))
 }
