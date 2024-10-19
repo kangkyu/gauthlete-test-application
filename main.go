@@ -111,10 +111,8 @@ func authorizeHandler(w http.ResponseWriter, r *http.Request) {
 		// 2) Find ticket from `response`
 		ticket := response.Ticket
 
-		fmt.Println(sessionManager)
-
 		// Store the Authlete ticket and state in the session
-		sessionManager.Put(r.Context(), "authorization-ticket", ticket)
+		sessionManager.Put(r.Context(), "authorizationTicket", ticket)
 
 		// Redirect to login
 		http.Redirect(w, r, "/login", http.StatusFound)
@@ -258,6 +256,8 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		</body></html>`)
 		return
 	}
+	// Retrieve the session data
+	authleteTicket := sessionManager.GetString(r.Context(), "authorizationTicket")
 
 	if r.Method == "POST" {
 		username := r.FormValue("username")
@@ -270,9 +270,6 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// Retrieve the session data
-		authleteTicket := sessionManager.GetString(r.Context(), "authorization-ticket")
-
 		// Issue the authorization
 		issueResp, err := authleteClient.AuthorizationIssue(authleteTicket, fmt.Sprintf("%d", userID))
 		if err != nil {
@@ -281,7 +278,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Clear the session
-		sessionManager.Remove(r.Context(), "authorization-ticket")
+		sessionManager.Remove(r.Context(), "authorizationTicket")
 
 		// 3) Find code from `issueResp.ResponseContent`
 		content := issueResp.ResponseContent
