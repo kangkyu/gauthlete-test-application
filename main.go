@@ -5,15 +5,28 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/kangkyu/gauthlete"
 )
 
 var authleteClient *gauthlete.ServiceClient
 
+var UserStore = make(map[string]User)
+
+type User struct {
+	ID       string
+	Username string
+	Email    string
+}
+
 func main() {
 	// Initialize Authlete client
 	authleteClient = gauthlete.NewServiceClient()
+
+	// Initialize some test users
+	UserStore["user1"] = User{ID: "user1", Username: "jimmy", Email: "jimmy@example.com"}
+	UserStore["user2"] = User{ID: "user2", Username: "gapbun", Email: "gapbun@example.com"}
 
 	// Set up routes
 	http.HandleFunc("/", homeHandler)
@@ -34,7 +47,7 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func authorizeHandler(w http.ResponseWriter, r *http.Request) {
-	// Find parameter from `r`
+	// 1) Find parameter from `r`
 	values := r.URL.Query()
 	parameters := values.Encode()
 
@@ -46,18 +59,22 @@ func authorizeHandler(w http.ResponseWriter, r *http.Request) {
 
 	switch response.Action {
 	case "INTERACTION":
-		// Find ticket from `response`
+		// 2) Find ticket from `response`
 		ticket := response.Ticket
 
-		// TODO: not 'Jimmy', what should it be?
-		// The subject (= a user account managed by the service) who has granted authorization to the client application.
-		issueResp, err := authleteClient.AuthorizationIssue(ticket, "Jimmy")
+		// TODO: authenticate the user here
+
+		// The subject (= a user account managed by the service who
+		// has granted authorization to the client application).
+		userID := "user1"
+
+		issueResp, err := authleteClient.AuthorizationIssue(ticket, userID)
 		if err != nil {
 			http.Error(w, "Authorization issue endpoint errored: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		// Find code from `issueResp.ResponseContent`
+		// 3) Find code from `issueResp.ResponseContent`
 		content := issueResp.ResponseContent
 
 		http.Redirect(w, r, content, http.StatusFound)
@@ -130,5 +147,39 @@ func tokenHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func userInfoHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte(`{"Hello!":"World"}`))
+	authHeader := r.Header.Get("Authorization")
+	if authHeader == "" {
+		http.Error(w, "Missing Authorization header", http.StatusUnauthorized)
+		return
+	}
+
+	bearerToken := strings.TrimPrefix(authHeader, "Bearer ")
+	if bearerToken == authHeader {
+		http.Error(w, "Invalid Authorization header format", http.StatusUnauthorized)
+		return
+	}
+
+	introspectionResponse, err := authleteClient.TokenIntrospect(bearerToken)
+	if err != nil {
+		http.Error(w, "Token introspection failed", http.StatusInternalServerError)
+		return
+	}
+
+	if !introspectionResponse.Usable {
+		http.Error(w, "Token is not active", http.StatusUnauthorized)
+		return
+	}
+
+	user, ok := UserStore[introspectionResponse.Subject]
+	if !ok {
+		http.Error(w, "User not found", http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"sub":      user.ID,
+		"username": user.Username,
+		"email":    user.Email,
+	})
 }
