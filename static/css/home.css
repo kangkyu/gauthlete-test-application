@@ -43,59 +43,52 @@ body {
     padding: 2rem;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     margin-bottom: 2rem;
-    text-align: center;
 }
 
 .card h2 {
     color: #2c3e50;
-    margin-bottom: 1rem;
-}
-
-.card p {
-    color: #666;
     margin-bottom: 1.5rem;
+    text-align: center;
 }
 
-.actions {
-    display: flex;
-    gap: 1rem;
-    justify-content: center;
-    margin-top: 2rem;
+.endpoints {
+    display: grid;
+    gap: 1.5rem;
 }
 
-.button {
+.endpoint-item {
+    padding: 1.5rem;
+    background: #f8f9fa;
+    border-radius: 6px;
+    border-left: 4px solid #4A90E2;
+}
+
+.endpoint-item h3 {
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+}
+
+.endpoint-item code {
     display: inline-block;
-    padding: 0.75rem 1.5rem;
+    background: #e9ecef;
+    padding: 0.25rem 0.5rem;
     border-radius: 4px;
-    text-decoration: none;
-    font-weight: 500;
-    transition: background-color 0.2s;
-}
-
-.button.primary {
-    background-color: #4A90E2;
-    color: white;
-}
-
-.button.primary:hover {
-    background-color: #357ABD;
-}
-
-.button.secondary {
-    background-color: #f8f9fa;
+    font-family: monospace;
     color: #4A90E2;
-    border: 1px solid #4A90E2;
+    margin: 0.5rem 0;
 }
 
-.button.secondary:hover {
-    background-color: #e9ecef;
+.endpoint-item p {
+    color: #666;
+    font-size: 0.95rem;
+    margin-top: 0.5rem;
 }
 
 .features {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 2rem;
-    margin-top: 3rem;
+    margin-top: 2rem;
 }
 
 .feature-item {
@@ -108,42 +101,59 @@ body {
 .feature-item h3 {
     color: #2c3e50;
     margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #f0f0f0;
 }
 
-.feature-item p {
+.feature-item ul {
+    list-style: none;
+}
+
+.feature-item ul li {
     color: #666;
+    padding: 0.5rem 0;
+    padding-left: 1.5rem;
+    position: relative;
+}
+
+.feature-item ul li:before {
+    content: "•";
+    color: #4A90E2;
+    position: absolute;
+    left: 0;
 }
 
 .footer {
     text-align: center;
     padding: 2rem 0;
     color: #666;
+    border-top: 1px solid #eee;
+    margin-top: 2rem;
 }
 
 @media (max-width: 768px) {
     .container {
         padding: 1rem;
     }
-    
+
     .header {
         margin-bottom: 2rem;
         padding: 1rem 0;
     }
-    
+
     .header h1 {
         font-size: 2rem;
     }
-    
+
     .features {
         grid-template-columns: 1fr;
     }
-    
-    .actions {
-        flex-direction: column;
+
+    .endpoints {
+        gap: 1rem;
     }
-    
-    .button {
-        width: 100%;
-        text-align: center;
+
+    .endpoint-item {
+        padding: 1rem;
     }
 }
