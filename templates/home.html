@@ -1,0 +1,76 @@
+{{/* templates/home.html */}}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OAuth 2.0 Authorization Server</title>
+    <link rel="stylesheet" href="/static/css/home.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>OAuth 2.0 Authorization Server</h1>
+            <p class="subtitle">Authlete Test Implementation</p>
+        </header>
+
+        <main class="main-content">
+            <div class="card">
+                <h2>Authorization Endpoints</h2>
+                <div class="endpoints">
+                    <div class="endpoint-item">
+                        <h3>Authorization Endpoint</h3>
+                        <code>/authorize</code>
+                        <p>OAuth 2.0 authorization endpoint for authorization code and implicit flows</p>
+                    </div>
+
+                    <div class="endpoint-item">
+                        <h3>Token Endpoint</h3>
+                        <code>/token</code>
+                        <p>OAuth 2.0 token endpoint for obtaining access tokens</p>
+                    </div>
+
+                    <div class="endpoint-item">
+                        <h3>UserInfo Endpoint</h3>
+                        <code>/userinfo</code>
+                        <p>OpenID Connect UserInfo endpoint for obtaining authenticated user information</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="features">
+                <div class="feature-item">
+                    <h3>Supported Grant Types</h3>
+                    <ul>
+                        <li>Authorization Code</li>
+                        <li>Client Credentials</li>
+                        <li>Refresh Token</li>
+                    </ul>
+                </div>
+
+                <div class="feature-item">
+                    <h3>Security Features</h3>
+                    <ul>
+                        <li>PKCE Support</li>
+                        <li>JWT Tokens</li>
+                        <li>Scope-based Access Control</li>
+                    </ul>
+                </div>
+
+                <div class="feature-item">
+                    <h3>OpenID Connect</h3>
+                    <ul>
+                        <li>Standard Claims</li>
+                        <li>ID Tokens</li>
+                        <li>UserInfo Endpoint</li>
+                    </ul>
+                </div>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <p>OAuth 2.0 Authorization Server Implementation</p>
+        </footer>
+    </div>
+</body>
+</html>

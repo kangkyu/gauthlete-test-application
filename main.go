@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"html/template"
 	"net/http"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
@@ -77,6 +79,11 @@ func main() {
 	// Set up routes
 	mux := http.NewServeMux()
 
+	// Static file serving
+	fs := http.FileServer(http.Dir("static"))
+	mux.Handle("/static/", http.StripPrefix("/static/", fs))
+
+	// Route handlers
 	mux.HandleFunc("/", homeHandler)
 	mux.HandleFunc("/authorize", authorizeHandler)
 	mux.HandleFunc("/token", tokenHandler)
@@ -90,9 +97,13 @@ func main() {
 }
 
 func homeHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, `<html><body>
-        <h1>Authlete Test App</h1>
-    </body></html>`)
+    tmpl := template.Must(template.ParseFiles(filepath.Join("templates", "home.html")))
+
+    err := tmpl.Execute(w, nil)
+    if err != nil {
+        http.Error(w, "Error rendering template: "+err.Error(), http.StatusInternalServerError)
+        return
+    }
 }
 
 func authorizeHandler(w http.ResponseWriter, r *http.Request) {
@@ -243,46 +254,57 @@ func authenticateUser(username, password string) (int, error) {
 	return id, nil
 }
 
+// LoginData holds the data to be passed to the template
+type LoginData struct {
+	Error string
+}
+
 func loginHandler(w http.ResponseWriter, r *http.Request) {
+	// Parse the template once at init or use a template cache
+	tmpl := template.Must(template.ParseFiles(filepath.Join("templates", "login.html")))
+
 	if r.Method == "GET" {
 		// Display login form
-		fmt.Fprintf(w, `<html><body>
-		<form method="post">
-			Username: <input type="text" name="username"><br>
-			Password: <input type="password" name="password"><br>
-			<input type="submit" value="Login">
-		</form>
-		New user? <a href='/signup'>Sign Up</a>
-		</body></html>`)
+		err := tmpl.Execute(w, nil)
+		if err != nil {
+			http.Error(w, "Error rendering template: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
 		return
 	}
-	// Retrieve the session data
-	authleteTicket := sessionManager.GetString(r.Context(), "authorizationTicket")
 
 	if r.Method == "POST" {
+		// Retrieve the session data
+		authleteTicket := sessionManager.GetString(r.Context(), "authorizationTicket")
 		username := r.FormValue("username")
 		password := r.FormValue("password")
 
 		// Authenticate user
 		userID, err := authenticateUser(username, password)
 		if err != nil {
-			http.Error(w, "Invalid credentials", http.StatusUnauthorized)
+			// Show error in the template
+			data := LoginData{
+				Error: "Invalid username or password",
+			}
+			tmpl.Execute(w, data)
 			return
 		}
 
 		// Issue the authorization
 		issueResp, err := authleteClient.AuthorizationIssue(authleteTicket, fmt.Sprintf("%d", userID))
 		if err != nil {
-			http.Error(w, "Authorization issue endpoint errored: "+err.Error(), http.StatusInternalServerError)
+			data := LoginData{
+				Error: "Authorization failed. Please try again.",
+			}
+			tmpl.Execute(w, data)
 			return
 		}
 
 		// Clear the session
 		sessionManager.Remove(r.Context(), "authorizationTicket")
 
-		// 3) Find code from `issueResp.ResponseContent`
+		// Redirect to the response content
 		content := issueResp.ResponseContent
-
 		http.Redirect(w, r, content, http.StatusFound)
 	}
 }
@@ -311,50 +333,70 @@ func getUser(id int) (*User, error) {
 	return &user, err
 }
 
+type SignupData struct {
+    Username string
+    Error    string
+    Success  string
+}
+
 func signupHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method == "GET" {
-		// Display signup form
-		fmt.Fprintf(w, `<html><body>
-			<h2>Sign Up</h2>
-			<form method="post">
-				Username: <input type="text" name="username" required><br>
-				Password: <input type="password" name="password" required><br>
-				<input type="submit" value="Sign Up">
-			</form>
-		</body></html>`)
-		return
-	}
+    tmpl := template.Must(template.ParseFiles(filepath.Join("templates", "signup.html")))
 
-	if r.Method == "POST" {
-		username := r.FormValue("username")
-		password := r.FormValue("password")
+    if r.Method == "GET" {
+        err := tmpl.Execute(w, nil)
+        if err != nil {
+            http.Error(w, "Error rendering template: "+err.Error(), http.StatusInternalServerError)
+            return
+        }
+        return
+    }
 
-		// Basic input validation
-		if username == "" || password == "" {
-			http.Error(w, "Username and password are required", http.StatusBadRequest)
-			return
-		}
+    if r.Method == "POST" {
+        username := r.FormValue("username")
+        password := r.FormValue("password")
+        data := SignupData{
+            Username: username,
+        }
 
-		// Check if user already exists
-		exists, err := usernameExists(username)
-		if err != nil {
-			http.Error(w, "Database error", http.StatusInternalServerError)
-			return
-		}
-		if exists {
-			http.Error(w, "Username already taken", http.StatusConflict)
-			return
-		}
+        // Basic input validation
+        if username == "" || password == "" {
+            data.Error = "Username and password are required"
+            tmpl.Execute(w, data)
+            return
+        }
 
-		err = registerUser(username, password)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+        // Password length validation
+        if len(password) < 8 {
+            data.Error = "Password must be at least 8 characters long"
+            tmpl.Execute(w, data)
+            return
+        }
 
-		// Redirect to login page or show success message
-		fmt.Fprintf(w, "<html><body>User created successfully. <a href='/login'>Login</a></body></html>")
-	}
+        // Check if user already exists
+        exists, err := usernameExists(username)
+        if err != nil {
+            data.Error = "An error occurred. Please try again"
+            tmpl.Execute(w, data)
+            return
+        }
+        if exists {
+            data.Error = "Username already taken"
+            tmpl.Execute(w, data)
+            return
+        }
+
+        // Register the user
+        err = registerUser(username, password)
+        if err != nil {
+            data.Error = "Failed to create account. Please try again"
+            tmpl.Execute(w, data)
+            return
+        }
+
+        // Show success message
+        data.Success = "Account created successfully!"
+        tmpl.Execute(w, data)
+    }
 }
 
 func registerUser(username, password string) error {

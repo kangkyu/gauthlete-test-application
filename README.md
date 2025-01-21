@@ -12,11 +12,8 @@ AUTHLETE_SERVICE_APIKEY='...' \
 AUTHLETE_SERVICE_APISECRET='...' \
 go run .
 
-# a separate terminal, to get the following output
-curl http://localhost:8080/
-<html><body>
-        <h1>Authlete Test App</h1>
-    </body></html>
+# a separate terminal, see if any errors
+open http://localhost:8080/
 ```
 
 You should be able to get service key and secret from [Authlete](https://www.authlete.com/developers/getting_started/#signing-up-to-authlete) if you sign up.
