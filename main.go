@@ -87,6 +87,7 @@ func main() {
 	mux.HandleFunc("/", homeHandler)
 	mux.HandleFunc("/authorize", authorizeHandler)
 	mux.HandleFunc("/token", tokenHandler)
+	mux.HandleFunc("/introspect", introspectionHandler)
 	mux.HandleFunc("/userinfo", userInfoHandler)
 	mux.HandleFunc("/login", loginHandler)
 	mux.HandleFunc("/signup", signupHandler)
@@ -235,6 +236,33 @@ func userInfoHandler(w http.ResponseWriter, r *http.Request) {
 		"sub":      user.ID,
 		"username": user.Username,
 	})
+}
+
+func introspectionHandler(w http.ResponseWriter, r *http.Request) {
+    if r.Method != "POST" {
+        http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+        return
+    }
+
+    // Get token from request
+    token := r.Header.Get("Authorization")
+    if token == "" {
+        http.Error(w, "No token provided", http.StatusBadRequest)
+        return
+    }
+    // Remove "Bearer " prefix if present
+    token = strings.TrimPrefix(token, "Bearer ")
+
+    // Use the library to introspect the token
+    introspectionResp, err := authleteClient.TokenIntrospect(token)
+    if err != nil {
+        http.Error(w, "Failed to introspect token: "+err.Error(), http.StatusInternalServerError)
+        return
+    }
+
+    // Return the introspection result
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(introspectionResp)
 }
 
 func authenticateUser(username, password string) (int, error) {
