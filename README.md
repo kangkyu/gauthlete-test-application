@@ -10,7 +10,7 @@ go mod tidy
 
 Need to install [dbmate](https://github.com/amacneil/dbmate) and then run this command first to get database ready
 ```sh
-DATABASE_URL=postgresql://tester:password@localhost/test_application_development?sslmode=disable dbmate migrate
+DATABASE_URL='postgresql://tester:password@localhost/test_application_development?sslmode=disable' dbmate migrate
 ```
 
 ```sh
