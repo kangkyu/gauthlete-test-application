@@ -6,7 +6,14 @@ test authorization server code for [Gauthlete](https://github.com/kangkyu/gauthl
 git clone git@github.com:kangkyu/gauthlete-test-client-app.git
 cd gauthlete-test-client-app
 go mod tidy
+```
 
+Need to install [dbmate](https://github.com/amacneil/dbmate) and then run this command first to get database ready
+```sh
+DATABASE_URL=postgresql://tester:password@localhost/test_application_development?sslmode=disable dbmate migrate
+```
+
+```sh
 # to use gauthlete, need two environment variables
 AUTHLETE_SERVICE_APIKEY='...' \
 AUTHLETE_SERVICE_APISECRET='...' \
